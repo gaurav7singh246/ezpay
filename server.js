@@ -18,34 +18,34 @@ const CHAT_ID = "8576159487"
 
 // MongoDB connect
 mongoose.connect("mongodb+srv://Yourgaurav07:dtGsryvfx3cpBOad@ezpay.le2xuq1.mongodb.net/ezpay?retryWrites=true&w=majority")
-.then(() => console.log("MongoDB Connected"))
-.catch(err => console.log(err))
+.then(()=>console.log("MongoDB Connected"))
+.catch(err=>console.log(err))
 
 // Schema
 const LogSchema = new mongoose.Schema({
-headers: Object,
-body: Object,
-query: Object,
-response: String,
-path: String,
-time: { type: Date, default: Date.now }
+headers:Object,
+body:Object,
+query:Object,
+response:String,
+path:String,
+time:{type:Date,default:Date.now}
 })
 
-const Log = mongoose.model("Log", LogSchema)
+const Log = mongoose.model("Log",LogSchema)
 
 // Telegram function
-async function sendTelegram(message) {
+async function sendTelegram(message){
 
 try{
 
-await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-method: "POST",
-headers: {
-"Content-Type": "application/json"
+await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`,{
+method:"POST",
+headers:{
+"Content-Type":"application/json"
 },
-body: JSON.stringify({
-chat_id: CHAT_ID,
-text: message
+body:JSON.stringify({
+chat_id:CHAT_ID,
+text:message
 })
 })
 
@@ -56,45 +56,45 @@ console.log("Telegram error")
 }
 
 // Proxy API
-app.all("*", async (req, res) => {
+app.all("*", async (req,res)=>{
 
-try {
+try{
 
 const url = TARGET_API + req.originalUrl
 
-// headers clean
-const headers = {
-"Content-Type": "application/json",
-"User-Agent": "Mozilla/5.0"
-}
+// original headers copy
+const headers = { ...req.headers }
+
+// host remove
+delete headers.host
 
 const options = {
-method: req.method,
-headers: headers
+method:req.method,
+headers:headers
 }
 
-// body only for POST/PUT
-if (req.method !== "GET") {
+// body only if not GET
+if(req.method !== "GET"){
 options.body = JSON.stringify(req.body)
 }
 
 // forward request
-const apiResponse = await fetch(url, options)
+const apiResponse = await fetch(url,options)
 
 const data = await apiResponse.text()
 
-// Save log in MongoDB
+// save log
 const log = new Log({
-headers: req.headers,
-body: req.body,
-query: req.query,
-response: data,
-path: req.originalUrl
+headers:req.headers,
+body:req.body,
+query:req.query,
+response:data,
+path:req.originalUrl
 })
 
 await log.save()
 
-// Telegram alert
+// telegram alert
 sendTelegram(
 `New API Request
 
@@ -104,10 +104,10 @@ Time: ${new Date().toLocaleString()}
 Body: ${JSON.stringify(req.body)}`
 )
 
-// Send response back to app
+// send response back
 res.status(apiResponse.status).send(data)
 
-} catch (err) {
+}catch(err){
 
 console.log(err)
 res.status(500).send("Proxy Error")
@@ -119,6 +119,6 @@ res.status(500).send("Proxy Error")
 // server start
 const PORT = process.env.PORT || 5000
 
-app.listen(PORT, () => {
+app.listen(PORT, ()=>{
 console.log("Server Running")
 })
